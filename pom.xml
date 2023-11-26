@@ -7,7 +7,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.1.5</version>
+    <version>3.1.0</version>
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
 
@@ -19,9 +19,10 @@
   <description>Application for managing ads</description>
 
   <properties>
-    <java.version>11</java.version>
-    <org.mapstruct.version>1.4.2.Final</org.mapstruct.version>
-    <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
+    <java.version>17</java.version>
+    <maven.compiler.version>17</maven.compiler.version>
+    <org.mapstruct.version>1.5.5.Final</org.mapstruct.version>
+<!--    <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>-->
   </properties>
 
   <dependencies>
@@ -59,11 +60,7 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.mapstruct</groupId>
-      <artifactId>mapstruct</artifactId>
-      <version>1.5.5.Final</version>
-    </dependency>
+
     <dependency>
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-test</artifactId>
@@ -74,36 +71,82 @@
       <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
       <version>2.1.0</version>
     </dependency>
+
+    <dependency>
+      <groupId>org.mapstruct</groupId>
+      <artifactId>mapstruct</artifactId>
+      <version>${org.mapstruct.version}</version>
+    </dependency>
+
   </dependencies>
 
   <build>
     <plugins>
+<!--      <plugin>-->
+<!--        <groupId>org.apache.maven.plugins</groupId>-->
+<!--        <artifactId>maven-compiler-plugin</artifactId>-->
+
+<!--        <configuration>-->
+<!--          <source>17</source>-->
+<!--          <target>17</target>-->
+<!--          <annotationProcessorPaths>-->
+<!--            <path>-->
+<!--              <groupId>org.projectlombok</groupId>-->
+<!--              <artifactId>lombok</artifactId>-->
+<!--&lt;!&ndash;              <version>${lombok.version}</version>&ndash;&gt;-->
+<!--            </path>-->
+
+<!--            <path>-->
+<!--              <groupId>org.mapstruct</groupId>-->
+<!--              <artifactId>mapstruct-processor</artifactId>-->
+<!--&lt;!&ndash;              <version>${org.mapstruct.version}</version>&ndash;&gt;-->
+<!--            </path>-->
+
+<!--&lt;!&ndash;            <path>&ndash;&gt;-->
+<!--&lt;!&ndash;              <groupId>org.projectlombok</groupId>&ndash;&gt;-->
+<!--&lt;!&ndash;              <artifactId>lombok-mapstruct-binding</artifactId>&ndash;&gt;-->
+<!--&lt;!&ndash;              <version>${lombok-mapstruct-binding.version}</version>&ndash;&gt;-->
+<!--&lt;!&ndash;            </path>&ndash;&gt;-->
+<!--          </annotationProcessorPaths>-->
+<!--        </configuration>-->
+<!--      </plugin>-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-
+<!--        <version>3.8.0</version>-->
         <configuration>
-          <source>17</source>
-          <target>17</target>
           <annotationProcessorPaths>
-            <path>
-              <groupId>org.mapstruct</groupId>
-              <artifactId>mapstruct-processor</artifactId>
-              <version>${org.mapstruct.version}</version>
-            </path>
             <path>
               <groupId>org.projectlombok</groupId>
               <artifactId>lombok</artifactId>
               <version>${lombok.version}</version>
             </path>
+
             <path>
-              <groupId>org.projectlombok</groupId>
-              <artifactId>lombok-mapstruct-binding</artifactId>
-              <version>${lombok-mapstruct-binding.version}</version>
+              <groupId>org.mapstruct</groupId>
+              <artifactId>mapstruct-processor</artifactId>
+              <version>${org.mapstruct.version}</version>
             </path>
+
+<!--            <dependency>-->
+<!--              <groupId>org.projectlombok</groupId>-->
+<!--              <artifactId>lombok-mapstruct-binding</artifactId>-->
+<!--              <version>0.2.0</version>-->
+<!--            </dependency>-->
           </annotationProcessorPaths>
+          <compilerArgs>
+            <compilerArg>
+              -Amapstruct.defaultComponentModel=spring
+            </compilerArg>
+          </compilerArgs>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <version>3.1.0</version>
+      </plugin>
+
     </plugins>
   </build>
 

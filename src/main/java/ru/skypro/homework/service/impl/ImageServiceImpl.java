@@ -22,7 +22,9 @@ public class ImageServiceImpl implements ImageService {
     private String imageDir;
 
     private final ImageRepository imageRepository;
+
     @Override
+    //метод для загрузки фото в БД
     public Image uploadImage(MultipartFile file) {
         Image image = new Image();
         image.setId((UUID.randomUUID().toString())); // генерируем уникальный идентификатор
@@ -32,15 +34,18 @@ public class ImageServiceImpl implements ImageService {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        imageRepository.save(image);
-        return image;
+        return imageRepository.save(image);
     }
 
     @Override
+    //метод для получения фото по id
     public byte[] getImage(String id) {
         Image image = imageRepository.findById(id).orElse(null);
-
-        return image.getImage();
+        if (image != null) {
+            return image.getImage();
+        } else {
+            return null;
+        }
     }
 
 }
