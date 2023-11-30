@@ -7,6 +7,9 @@ import ru.skypro.homework.dto.AdsInfoDTO;
 
 import java.util.List;
 
+/**
+ * Класс описывающий сущность Обявление
+ */
 
 @Entity
 @Data
@@ -15,54 +18,21 @@ public class Ads {
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     @Column(name = "ads_id")
-    private long id;
+    private Integer pk;
 
     private String description;
-    private String image;
-    private long price;
+    private Integer price;
     private String title;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = {
-            CascadeType.DETACH,
-            CascadeType.MERGE,
-            CascadeType.PERSIST,
-            CascadeType.REFRESH
-    })
-    UserInfo author;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn (name = "user_id")
+    private UserInfo author;
 
-    @OneToMany(cascade = CascadeType.ALL,
-            fetch = FetchType.LAZY,
-            mappedBy = "ads")
-    List<Comment> comments;
+    @OneToMany(mappedBy = "ads", cascade = CascadeType.ALL)
+    private List<Comment> comments;
 
-    public Ads(String description, long price, String title) {
-        this.description = description;
-        this.price = price;
-        this.title = title;
-    }
+    @OneToOne
+    @JoinColumn (name = "image_id")
+    private Image image;
 
-
-    public static AdsDTO mapToAdsDto(Ads ads) {
-        return new AdsDTO(ads.getAuthor().getId(),
-                ads.getAdsImage(ads),
-                ads.getId(),
-                ads.getPrice(),
-                ads.getTitle());
-    }
-
-    public static AdsInfoDTO mapToAdsInfoDto(Ads ads) {
-        return new AdsInfoDTO(ads.getId(),
-                ads.getAuthor().getFirstName(),
-                ads.getAuthor().getLastName(),
-                ads.getDescription(),
-                ads.getAuthor().getEmail(),
-                ads.getAdsImage(ads),
-                ads.getAuthor().getPhone(),
-                ads.getPrice(),
-                ads.getTitle());
-    }
-
-    public String getAdsImage(Ads ads) {
-        return null;
-    }
 }

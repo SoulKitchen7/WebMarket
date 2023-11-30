@@ -1,87 +1,173 @@
 package ru.skypro.homework.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import ru.skypro.homework.dto.AdsDTO;
-import ru.skypro.homework.dto.AdsInfoDTO;
-import ru.skypro.homework.dto.CreateAdsDTO;
+import ru.skypro.homework.dto.*;
+import ru.skypro.homework.exception.AdsNotFoundException;
 import ru.skypro.homework.model.Ads;
+import ru.skypro.homework.model.Image;
 import ru.skypro.homework.model.UserInfo;
 import ru.skypro.homework.repository.AdsRepository;
+import ru.skypro.homework.repository.ImageRepository;
 import ru.skypro.homework.service.AdsService;
+import ru.skypro.homework.service.ImageService;
+import ru.skypro.homework.service.mapper.AdsMapper;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import java.util.*;
+import java.util.stream.Collectors;
+/**
+ * Класс-сервис, реализующий интерфейс {@link AdsService}
+ */
 @Service
 @RequiredArgsConstructor
 public class AdsServiceImpl implements AdsService {
 
     private final AdsRepository adsRepository;
+    private final ImageRepository imageRepository;
+    private final AdsMapper adsMapper;
+    private final AuthServiceImpl authService;
+    private final ImageService imageService;
+    Logger logger = LoggerFactory.getLogger(AdsServiceImpl.class);
+
+    /**
+     * Метод возврщает список и количество всех объявлений
+     * @return {@link AllAdsDTO}
+     */
     @Override
-    public List<AdsDTO> getAllAds() {
-        List<Ads> adsList = adsRepository.findAll();
-        List<AdsDTO> adsDTOList = new ArrayList<>();
-        for (Ads ads:adsList) {
-            adsDTOList.add(Ads.mapToAdsDto(ads));
-        }
-        return adsDTOList;
+    @Transactional
+    public AllAdsDTO getAllAds() {
+        List<AdsDTO> adsDTOList = adsRepository.findAll().stream()
+                .map(adsMapper ::adsToAdsDto)
+                .collect(Collectors.toList());
+
+        AllAdsDTO allAdsDTO = new AllAdsDTO();
+        allAdsDTO.setResults(adsDTOList);
+        allAdsDTO.setCount(adsDTOList.size());
+
+        logger.info("Получен список всех объявлений");
+        return allAdsDTO;
     }
 
+    /**
+     * Метод для добавления объявления
+     * @param image
+     * @param properties
+     * @return {@link AdsDTO}
+     */
     @Override
+    @Transactional
     public AdsDTO addAds(MultipartFile image, CreateAdsDTO properties) {
-        Ads ads = new Ads(properties.getDescription(),
-                properties.getPrice(),
-                properties.getTitle());
+        UserInfo user = authService.getCurrentUser();
 
-        adsRepository.save(ads);
-        return Ads.mapToAdsDto(ads);
-    }
-
-    @Override
-    public AdsInfoDTO getAdsById(long id) {
-        Ads ads = adsRepository.findById(id).orElse(null);
-        return Ads.mapToAdsInfoDto(ads);
-    }
-
-    @Override
-    public void deleteAds(long id) {
-        adsRepository.deleteById(id);
-    }
-
-    @Override
-    public AdsDTO updateAds(long id, CreateAdsDTO createAdsDTO) {
-        Ads ads = adsRepository.findById(id).orElse(null);
-        ads.setDescription(createAdsDTO.getDescription());
-        ads.setPrice(createAdsDTO.getPrice());
-        ads.setTitle(createAdsDTO.getTitle());
-
+        Image uploadImage = imageService.uploadImage(image);
+        imageRepository.save(uploadImage);
+        logger.info("Изображение объявления сохранено в базу данных", uploadImage);
+        Ads ads = adsMapper.createAdsDtoToModel(properties);
+        ads.setImage(uploadImage);
+        ads.setAuthor(user);
         adsRepository.save(ads);
 
-        return Ads.mapToAdsDto(ads);
+        logger.info("Объявление сохранено в базу данных", ads);
+        return adsMapper.adsToAdsDto(ads);
+
     }
 
+    /**
+     * Метод возвращает информацию об оъбявлении по id
+     * @param id
+     * @return {@link AdsInfoDTO}
+     */
     @Override
-    public List<AdsDTO> getUserAds() {
-        UserInfo user = new UserInfo();
-        List<Ads> adsList = user.getAds();
-        List<AdsDTO> adsDTOList = new ArrayList<>();
-        for (Ads ads:adsList) {
-            adsDTOList.add(Ads.mapToAdsDto(ads));
+    @Transactional
+    public AdsInfoDTO getAdsById(Integer id) {
+        Ads ads = adsRepository.findById(id).orElseThrow(AdsNotFoundException::new);
+
+        return adsMapper.adsToAdsInfoDto(ads);
+    }
+
+    /**
+     * Метод удаляет объявление по id
+     * @param id
+     */
+    @Override
+    @Transactional
+    public void deleteAds(Integer id) {
+        UserInfo user = authService.getCurrentUser();
+        Ads ads = adsRepository.findById(id).orElseThrow(AdsNotFoundException::new);
+        if (user.getId().equals(ads.getAuthor().getId()) || user.getRole().equals(Role.ADMIN)) {
+            adsRepository.deleteById(id);
         }
-        return adsDTOList;
+        logger.info("Обявление удалено из базы данных", ads);
     }
 
+    /**
+     * Метод обновляет информацию об обяъвлении
+     * @param id
+     * @param createAdsDTO
+     * @return
+     */
     @Override
-    public String updateAdsImage(long id, MultipartFile image) {
-        Ads ads = adsRepository.findById(id).orElse(null);
+    @Transactional
+    public AdsDTO updateAds(Integer id, CreateAdsDTO createAdsDTO) {
+        Ads ads = adsRepository.findById(id).orElseThrow(AdsNotFoundException::new);
+        UserInfo user = authService.getCurrentUser();
+        if (user.getId().equals(ads.getAuthor().getId()) || user.getRole().equals(Role.ADMIN)) {
+            ads.setDescription(createAdsDTO.getDescription());
+            ads.setPrice(createAdsDTO.getPrice());
+            ads.setTitle(createAdsDTO.getTitle());
+        }
 
-        ads.setImage("Test");
-        adsRepository.save(ads);
-
-        return "Test";
+        return adsMapper.adsToAdsDto(ads);
     }
 
+    /**
+     * Метод возвращает список и количество всех объявлений пользователя
+     * @return {@link AllAdsDTO}
+     */
+    @Override
+    @Transactional
+    public AllAdsDTO getUserAds() {
+        UserInfo user = authService.getCurrentUser();
+        List<AdsDTO> adsDTOList = user.getAds().stream()
+                .map(adsMapper::adsToAdsDto)
+                .collect(Collectors.toList());
 
+        AllAdsDTO allAdsDTO = new AllAdsDTO();
+        allAdsDTO.setResults(adsDTOList);
+        allAdsDTO.setCount(adsDTOList.size());
+        logger.info("Получен список всех объявлений пользователя");
+        return allAdsDTO;
+    }
+
+    /**
+     * Метод обновляет изображение объявления
+     * @param id
+     * @param image
+     */
+    @Override
+    @Transactional
+    public void updateAdsImage(Integer id, MultipartFile image) {
+        Ads ads = adsRepository.findById(id).orElseThrow(AdsNotFoundException::new);
+        UserInfo user = authService.getCurrentUser();
+        if (user.getId().equals(ads.getAuthor().getId()) || user.getRole().equals(Role.ADMIN)) {
+            Image uploadImage = imageService.uploadImage(image);
+            ads.setImage(uploadImage);
+            adsRepository.save(ads);
+        }
+    }
+
+    /**
+     * Метод возвращает массив байтов изображения по id
+     * @param id
+     * @return byte[]
+     */
+    @Override
+    @Transactional
+    public byte[] getImage(String id) {
+        return imageService.getImage(id);
+    }
 }

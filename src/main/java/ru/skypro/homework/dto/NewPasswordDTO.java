@@ -7,8 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreateAdsDTO {
-    private String title;
-    private Integer price;
-    private String description;
+public class NewPasswordDTO {
+    private String currentPassword;
+    private String newPassword;
 }
