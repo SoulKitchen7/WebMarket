@@ -24,7 +24,6 @@ public class ImageServiceImplTest {
     @InjectMocks
     private ImageServiceImpl imageService;
 
-
     @Test
     public void shouldReturnImageById() {
         Image image = new Image();
